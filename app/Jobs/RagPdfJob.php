@@ -37,7 +37,7 @@ class RagPdfJob implements ShouldQueue
      */
     public function handle()
     {
-        Log::info("Iniciando o processamento do arquivo: " . $this->filePath);
+        Log::info("Iniciando o processamento do arquivo: app/private/" . $this->filePath);
 
         $status = StatusRAG::where('file_path', $this->filePath)->first();
         if (!$status) {
@@ -47,9 +47,10 @@ class RagPdfJob implements ShouldQueue
 
         try {
             // Caminho do PDF de exemplo
-            $pdfPath = storage_path($this->filePath);
+            $pdfPath = storage_path("app/private/$this->filePath");
 
             // Capturar metadados do PDF
+            Log::info("Iniciando Capturar metadados do PDF");
             try {
                 $parser = new Parser();
                 $pdf = $parser->parseFile($pdfPath);
@@ -88,6 +89,7 @@ class RagPdfJob implements ShouldQueue
             }
 
             // Iniciar a leitura do PDF
+            Log::info("Iniciando a leitura do PDF");
             try {
                 $pdfController = app(PdfController::class);
                 $text = $pdfController->lerPDF($pdfPath);
@@ -98,15 +100,17 @@ class RagPdfJob implements ShouldQueue
             }
 
             // Gerar os chunks
+            Log::info("Iniciando Gerar os chunks");
             try {
                 $chunkController = app(ChunkController::class);
-                $chunks = $chunkController->chunkText($text, 500, 100, $this, $status);
+                $chunks = $chunkController->chunkText($text, 500, 100, $status);
             } catch (\Exception $e) {
                 Log::error("\nException: " . $e->getMessage());
                 return;
             }
 
             // Gerar embeddings
+            Log::info("Iniciando Gerar embeddings");
             try {
                 $embeddingController = app(EmbeddingController::class);
                 foreach ($chunks as $chunk) {

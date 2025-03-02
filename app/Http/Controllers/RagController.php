@@ -15,8 +15,7 @@ class RagController extends Controller
             $request->validate([
                 'pdfFile' => 'required|file|mimes:pdf|max:10240',
             ]);
-
-            $path = $request->file('pdfFile')->store('uploads');
+            $path = $request->file('pdfFile')->store('uploads', 'local');
 
             // Registrar o processamento no banco de dados
             $status = new StatusRAG();
