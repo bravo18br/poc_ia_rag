@@ -29,7 +29,8 @@ class RagController extends Controller
 
             return response()->json([
                 'message' => 'Arquivo enviado com sucesso! O processamento será feito em segundo plano.',
-                'path' => $path
+                'path' => $path,
+                'id'=> $status->id
             ]);
 
         } catch (\Exception $e) {

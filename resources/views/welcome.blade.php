@@ -67,7 +67,9 @@
                         uploadMessage.classList.remove("text-danger");
                         uploadMessage.classList.add("text-success");
                         uploadMessage.textContent = data.message;
-                        console.log(`Path: ${data.path}`);
+                        // console.log(`Path: ${data.path}`);
+                        // console.log(`ID: ${data.id}`);
+                        checkStatus(data.id);
                     }
                 })
                 .catch(error => {
@@ -77,16 +79,25 @@
         });
 
         function checkStatus(id) {
-            fetch(`/api/status/${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("upload-message").textContent = `Status: ${data.status}`;
-                    if (data.status !== "concluído") {
-                        setTimeout(() => checkStatus(id), 3000); // Repetir após 3 segundos
-                    }
-                });
-        }
+        fetch(`/api/status/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                let uploadMessage = document.getElementById("upload-message");
+                uploadMessage.textContent = `Status: ${data.status} (${data.percent}%)`;
 
+                console.log(`Status: ${data.status}, Percentual: ${data.percent}%`);
+
+                if (data.status !== "concluído") {
+                    setTimeout(() => checkStatus(id), 1000);
+                } else {
+                    uploadMessage.classList.add("text-success");
+                    uploadMessage.textContent = "Processamento concluído!";
+                }
+            })
+            .catch(error => {
+                console.error("Erro ao verificar status:", error);
+            });
+    }
     </script>
 </body>
 

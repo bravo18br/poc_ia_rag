@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ChunkController extends Controller
@@ -11,12 +12,12 @@ class ChunkController extends Controller
         $chunks = [];
         $length = Str::length($text);
         $steps = ceil($length / ($chunkSize - $overlap));
-        $status->percent = 1/(2*$steps);
+        $status->percent = 2 * $steps;
         $status->save();
 
         for ($i = 0; $i < $length; $i += ($chunkSize - $overlap)) {
             $chunks[] = Str::substr($text, $i, $chunkSize);
-            $status->percent = 1+$i/(2*$steps);
+            $status->percent -= 1;
             $status->save();
         }
 

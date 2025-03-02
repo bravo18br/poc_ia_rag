@@ -113,6 +113,7 @@ class RagPdfJob implements ShouldQueue
             Log::info("Iniciando Gerar embeddings");
             try {
                 $embeddingController = app(EmbeddingController::class);
+                Log::info('$embeddingController gerado');
                 foreach ($chunks as $chunk) {
                     $embeddingData = $embeddingController->generateEmbedding($chunk);
                     if ($embeddingData && isset($embeddingData['embedding'])) {
@@ -121,8 +122,10 @@ class RagPdfJob implements ShouldQueue
                             'embedding' => new Vector($embeddingData['embedding']),
                             'file_id' => $pdfMetadata->id, // Relaciona com o arquivo processado
                         ]);
+                    } else {
+                        Log::error("Erro ao gerar embedding para o chunk: " . $chunk);
                     }
-                    $status->percent += 1;
+                    $status->percent -= 1;
                     $status->save();
                 }
             } catch (\Exception $e) {
