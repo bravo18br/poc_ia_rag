@@ -10,7 +10,9 @@
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "pgvector/pgvector": "^0.2.2",
-        "smalot/pdfparser": "^2.11"
+        "smalot/pdfparser": "^2.11",
+        "spatie/pdf-to-text": "^1.54",
+        "thiagoalessio/tesseract_ocr": "^2.13"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
