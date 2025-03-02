@@ -67,8 +67,6 @@
                         uploadMessage.classList.remove("text-danger");
                         uploadMessage.classList.add("text-success");
                         uploadMessage.textContent = data.message;
-                        // console.log(`Path: ${data.path}`);
-                        // console.log(`ID: ${data.id}`);
                         checkStatus(data.id);
                     }
                 })
@@ -79,25 +77,26 @@
         });
 
         function checkStatus(id) {
-        fetch(`/api/status/${id}`)
-            .then(response => response.json())
-            .then(data => {
-                let uploadMessage = document.getElementById("upload-message");
-                uploadMessage.textContent = `Status: ${data.status} (${data.percent}%)`;
+            fetch(`/status/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    let uploadMessage = document.getElementById("upload-message");
+                    let percent = parseFloat(data.percent*100).toFixed(2);
+                    uploadMessage.textContent = `${data.status} - ${percent}%`;
+                    console.log(`${data.status} - ${percent}%`);
 
-                console.log(`Status: ${data.status}, Percentual: ${data.percent}%`);
+                    if (data.status !== "Concluído") {
+                        setTimeout(() => checkStatus(id), 1000);
+                    } else {
+                        uploadMessage.classList.add("text-success");
+                        uploadMessage.textContent = "Processamento concluído!";
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao verificar status:", error);
+                });
+        }
 
-                if (data.status !== "concluído") {
-                    setTimeout(() => checkStatus(id), 1000);
-                } else {
-                    uploadMessage.classList.add("text-success");
-                    uploadMessage.textContent = "Processamento concluído!";
-                }
-            })
-            .catch(error => {
-                console.error("Erro ao verificar status:", error);
-            });
-    }
     </script>
 </body>
 

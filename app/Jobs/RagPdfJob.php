@@ -50,7 +50,7 @@ class RagPdfJob implements ShouldQueue
             $pdfPath = storage_path("app/private/$this->filePath");
 
             // Capturar metadados do PDF
-            Log::info("Iniciando Capturar metadados do PDF");
+            // Log::info("Iniciando Capturar metadados do PDF");
             try {
                 $parser = new Parser();
                 $pdf = $parser->parseFile($pdfPath);
@@ -89,7 +89,7 @@ class RagPdfJob implements ShouldQueue
             }
 
             // Iniciar a leitura do PDF
-            Log::info("Iniciando a leitura do PDF");
+            // Log::info("Iniciando a leitura do PDF");
             try {
                 $pdfController = app(PdfController::class);
                 $text = $pdfController->lerPDF($pdfPath);
@@ -100,8 +100,10 @@ class RagPdfJob implements ShouldQueue
             }
 
             // Gerar os chunks
-            Log::info("Iniciando Gerar os chunks");
+            // Log::info("Iniciando Gerar os chunks");
             try {
+                $status->status = 'Gerando chunks';
+                $status->save();
                 $chunkController = app(ChunkController::class);
                 $chunks = $chunkController->chunkText($text, 500, 100, $status);
             } catch (\Exception $e) {
@@ -111,27 +113,25 @@ class RagPdfJob implements ShouldQueue
 
             // Gerar embeddings
             Log::info("Iniciando Gerar embeddings");
-            try {
-                $embeddingController = app(EmbeddingController::class);
-                Log::info('$embeddingController gerado');
-                foreach ($chunks as $chunk) {
-                    $embeddingData = $embeddingController->generateEmbedding($chunk);
-                    if ($embeddingData && isset($embeddingData['embedding'])) {
-                        Embedding::create([
-                            'content' => $chunk,
-                            'embedding' => new Vector($embeddingData['embedding']),
-                            'file_id' => $pdfMetadata->id, // Relaciona com o arquivo processado
-                        ]);
-                    } else {
-                        Log::error("Erro ao gerar embedding para o chunk: " . $chunk);
-                    }
-                    $status->percent -= 1;
-                    $status->save();
+            $status->status = 'Gerando embeddings';
+            $embeddingController = app(EmbeddingController::class);
+            foreach ($chunks as $i => $chunk) {
+                $embeddingData = $embeddingController->generateEmbedding($chunk);
+                if ($embeddingData && isset($embeddingData['embedding'])) {
+                    Embedding::create([
+                        'content' => $chunk,
+                        'embedding' => new Vector($embeddingData['embedding']),
+                        'file_id' => $pdfMetadata->id, // Relaciona com o arquivo processado
+                    ]);
+                } else {
+                    Log::error("Erro ao gerar embedding para o chunk: " . $chunk);
                 }
-            } catch (\Exception $e) {
-                Log::error("\nException: " . $e->getMessage());
-                return;
+                // Log::info( $i . ' / ' . count($chunks));
+                $status->percent = $i / count($chunks);
+                $status->save();
             }
+            $status->status = 'Concluído';
+            $status->save();
 
             Log::info("Processamento concluído para: " . $this->filePath);
         } catch (\Exception $e) {
