@@ -12,14 +12,14 @@ class EmbeddingController extends Controller
         $url = env('OLLAMA_API_URL') . '/api/embeddings';
 
         try {
-            Log::info('Enviando requisição para API de embeddings...');
+            // Log::info('Enviando requisição para API de embeddings...');
             $response = Http::post($url, [
                 'model' => 'nomic-embed-text',
                 'prompt' => $chunk
             ]);
 
             if ($response->successful()) {
-                Log::info('Embedding gerado com sucesso.');
+                // Log::info('Embedding gerado com sucesso.');
                 return $response->json();
             } else {
                 Log::error('Erro na API de embeddings: ' . $response->body());

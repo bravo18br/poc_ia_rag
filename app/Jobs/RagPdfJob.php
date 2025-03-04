@@ -133,6 +133,8 @@ class RagPdfJob implements ShouldQueue
             $status->status = 'Concluído';
             $status->save();
 
+
+            
             Log::info("Processamento concluído para: " . $this->filePath);
         } catch (\Exception $e) {
             Log::error("Erro no processamento: " . $e->getMessage());

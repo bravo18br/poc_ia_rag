@@ -58,9 +58,9 @@ class PdfController extends Controller
     {
         // Primeiro tenta extrair texto normalmente
         try {
-            // $binaryPath = 'C:\Program Files\poppler-24.08.0\Library\bin\pdftotext.exe'; // Ajuste conforme a instalação
-            // $text = Pdf::getText($path, $binaryPath);
-            $text = Pdf::getText($path);
+            $binaryPath = 'C:\Program Files\poppler-24.08.0\Library\bin\pdftotext.exe'; // Ajuste conforme a instalação
+            $text = Pdf::getText($path, $binaryPath);
+            // $text = Pdf::getText($path);
             if (!empty(trim($text))) {
                 return $text;
             }
