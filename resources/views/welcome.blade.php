@@ -81,7 +81,7 @@
                 .then(response => response.json())
                 .then(data => {
                     let uploadMessage = document.getElementById("upload-message");
-                    let percent = parseFloat(data.percent*100).toFixed(2);
+                    let percent = parseFloat(data.percent * 100).toFixed(2);
                     uploadMessage.textContent = `${data.status} - ${percent}%`;
                     console.log(`${data.status} - ${percent}%`);
 
@@ -98,6 +98,33 @@
                     console.error("Erro ao verificar status:", error);
                 });
         }
+
+        document.getElementById("sendMessage").addEventListener("click", function (event) {
+            event.preventDefault();
+
+            const message = document.getElementById("userInput").value;
+            if (!message) return;
+
+            const csrfToken = document.querySelector('input[name="_token"]')?.value || '';
+
+            fetch("/userInput", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrfToken
+                },
+                body: JSON.stringify({ userInput: message })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Resposta BACK:", data.message);
+                    const chatBox = document.getElementById("chat-box");
+                    chatBox.innerHTML += `<div><strong>Você:</strong> ${message}</div>`;
+                    chatBox.innerHTML += `<div><strong>IA:</strong> ${data.message}</div>`;
+                    document.getElementById("userInput").value = "";
+                })
+                .catch(error => console.error("Erro ao enviar mensagem:", error));
+        });
 
     </script>
 </body>
