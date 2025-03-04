@@ -1,0 +1,13 @@
+GPL Ghostscript 10.04.0 (2024-09-18)
+Copyright (C) 2024 Artifex Software, Inc.  All rights reserved.
+This software is supplied under the GNU AGPLv3 and comes with NO WARRANTY:
+see the file COPYING for details.
+Error: /undefinedfilename in (C:\\Users\\04333747996\\Desktop\\poc_ia_rag\\storage\\app/private/{id:1,filename:DocumentoModeloRAG.pdf,title:Sem t\\u00edtulo 3,author:rosicler.bonora,source:Local,path:uploads\\/NALdTcWPvj9zzC3l0FdQmPm0hpo4...)
+Operand stack:
+
+Execution stack:
+   %interp_exit   .runexec2   --nostringval--   --nostringval--   --nostringval--   2   %stopped_push   --nostringval--   --nostringval--   --nostringval--   false   1   %stopped_push
+Dictionary stack:
+   --dict:750/1123(ro)(G)--   --dict:0/20(G)--   --dict:85/200(L)--
+Current allocation mode is local
+Last OS error: No such file or directory

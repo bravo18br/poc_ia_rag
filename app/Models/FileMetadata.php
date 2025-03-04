@@ -14,7 +14,10 @@ class FileMetadata extends Model
         'author',
         'created_at',
         'updated_at',
-        'source'
+        'source',
+        'path',
+        'producer',
+        'pages',
     ];
 
     public function embeddings()

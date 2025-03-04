@@ -22,14 +22,14 @@ class RagPdfJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $filePath;
+    protected $metadados;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($filePath)
+    public function __construct($metadados)
     {
-        $this->filePath = $filePath;
+        $this->metadados = $metadados;
     }
 
     /**
@@ -37,56 +37,17 @@ class RagPdfJob implements ShouldQueue
      */
     public function handle()
     {
-        Log::info("Iniciando o processamento do arquivo: app/private/" . $this->filePath);
+        Log::info("Iniciando o processamento do arquivo: app/private/" . $this->metadados->path);
 
-        $status = StatusRAG::where('file_path', $this->filePath)->first();
+        $status = StatusRAG::where('file_path', $this->metadados->path)->first();
         if (!$status) {
-            Log::error("Status não encontrado para o arquivo: " . $this->filePath);
+            Log::error("Status não encontrado para o arquivo: " . $this->metadados->path);
             return;
         }
 
         try {
             // Caminho do PDF de exemplo
-            $pdfPath = storage_path("app/private/$this->filePath");
-
-            // Capturar metadados do PDF
-            // Log::info("Iniciando Capturar metadados do PDF");
-            try {
-                $parser = new Parser();
-                $pdf = $parser->parseFile($pdfPath);
-                $details = $pdf->getDetails();
-
-                $filename = basename($pdfPath);
-                $title = $details['Title'] ?? null;
-                $author = $details['Author'] ?? null;
-                $created_at = isset($details['CreationDate']) ? date('Y-m-d H:i:s', strtotime($details['CreationDate'])) : null;
-
-                // Verifica se já existe um registro igual no banco**
-                $existingFile = FileMetadata::where('filename', $filename)
-                    ->where('title', $title)
-                    ->where('author', $author)
-                    ->where('created_at', $created_at)
-                    ->first();
-
-                if ($existingFile) {
-                    Log::warning("\nArquivo já foi inserido no pgvector. Processamento abortado.");
-                    return;
-                }
-
-                // Se não existir, cria um novo registro**
-                $pdfMetadata = FileMetadata::create([
-                    'filename' => $filename,
-                    'title' => $title,
-                    'author' => $author,
-                    'created_at' => $created_at,
-                    'updated_at' => isset($details['ModDate']) ? date('Y-m-d H:i:s', strtotime($details['ModDate'])) : null,
-                    'source' => 'Local'
-                ]);
-
-            } catch (\Exception $e) {
-                Log::error("\nErro ao capturar metadados: " . $e->getMessage());
-                return;
-            }
+            $pdfPath = storage_path("app/private/" . $this->metadados->path);
 
             // Iniciar a leitura do PDF
             // Log::info("Iniciando a leitura do PDF");
@@ -121,7 +82,7 @@ class RagPdfJob implements ShouldQueue
                     Embedding::create([
                         'content' => $chunk,
                         'embedding' => new Vector($embeddingData['embedding']),
-                        'file_id' => $pdfMetadata->id, // Relaciona com o arquivo processado
+                        'file_id' => $this->metadados->id, // Relaciona com o arquivo processado
                     ]);
                 } else {
                     Log::error("Erro ao gerar embedding para o chunk: " . $chunk);
@@ -134,8 +95,8 @@ class RagPdfJob implements ShouldQueue
             $status->save();
 
 
-            
-            Log::info("Processamento concluído para: " . $this->filePath);
+
+            Log::info("Processamento concluído para: " . $this->metadados->path);
         } catch (\Exception $e) {
             Log::error("Erro no processamento: " . $e->getMessage());
         }

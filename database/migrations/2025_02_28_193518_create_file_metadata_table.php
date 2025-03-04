@@ -14,6 +14,9 @@ return new class extends Migration
             $table->string('title')->nullable();
             $table->string('author')->nullable();
             $table->string('source')->nullable();
+            $table->string('path')->nullable();
+            $table->string('producer')->nullable();
+            $table->string('pages')->nullable();
             $table->timestamps();
         });
 

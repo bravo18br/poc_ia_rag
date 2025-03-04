@@ -28,8 +28,8 @@
             <h3>Converse com a IA</h3>
             <div id="chat-box" class="border rounded p-3 bg-white" style="height: 300px; overflow-y: auto;"></div>
             <div class="input-group mt-3">
-                <input type="text" id="userInput" class="form-control" placeholder="Digite sua pergunta...">
-                <button class="btn btn-primary" id="sendMessage">Enviar</button>
+                <input type="text" id="userInput" class="form-control" placeholder="Digite sua pergunta..." disabled>
+                <button class="btn btn-primary" id="sendMessage" disabled>Enviar</button>
             </div>
         </div>
     </div>
@@ -90,6 +90,8 @@
                     } else {
                         uploadMessage.classList.add("text-success");
                         uploadMessage.textContent = "Processamento concluído!";
+                        userInput.disabled = false;
+                        sendMessage.disabled = false;
                     }
                 })
                 .catch(error => {
