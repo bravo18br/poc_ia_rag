@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class OllamaController extends Controller
 {
@@ -12,8 +13,10 @@ class OllamaController extends Controller
         $baseUrl = env('OLLAMA_API_URL', 'http://localhost:11434');
 
         try {
+            // Log::info("$baseUrl/api/generate");
             $response = Http::timeout(600)->post("$baseUrl/api/generate", $params);
 
+            // Log::info("Response: " . $response);
             if ($response->successful()) {
                 return response()->json(["response" => $response->json('response')]);
             } else {
