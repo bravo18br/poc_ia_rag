@@ -6,17 +6,14 @@ use App\Http\Controllers\ChunkController;
 use App\Http\Controllers\EmbeddingController;
 use App\Http\Controllers\PdfController;
 use App\Models\Embedding;
-use App\Models\FileMetadata;
 use App\Models\StatusRAG;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Pgvector\Laravel\Vector;
-use Smalot\PdfParser\Parser;
 
 class RagPdfJob implements ShouldQueue
 {
@@ -46,6 +43,18 @@ class RagPdfJob implements ShouldQueue
         }
 
         try {
+            // Preparar os metadados do arquivo
+            $text = '';
+            $text .= "arquivo_id: {$this->metadados->id}\n";
+            $text .= "arquivo_nome: {$this->metadados->filename}\n";
+            $text .= "arquivo_caminho: {$this->metadados->path}\n";
+            $text .= "arquivo_titulo: {$this->metadados->title}\n";
+            $text .= "arquivo_autor: {$this->metadados->author}\n";
+            $text .= "arquivo_produtor: {$this->metadados->producer}\n";
+            $text .= "arquivo_paginas: {$this->metadados->pages}\n";
+            $text .= "arquivo_criado_em: {$this->metadados->created_at}\n";
+            $text .= "arquivo_atualizado_em: {$this->metadados->updated_at}\n";
+
             // Caminho do PDF de exemplo
             $pdfPath = storage_path("app/private/" . $this->metadados->path);
 
@@ -53,8 +62,8 @@ class RagPdfJob implements ShouldQueue
             // Log::info("Iniciando a leitura do PDF");
             try {
                 $pdfController = app(PdfController::class);
-                $text = $pdfController->lerPDF($pdfPath);
-                Log::info("PDF lido.");
+                $text .= $pdfController->lerPDF($pdfPath);
+                // Log::info("PDF lido.");
             } catch (\Exception $e) {
                 Log::error("\nException: " . $e->getMessage());
                 return;

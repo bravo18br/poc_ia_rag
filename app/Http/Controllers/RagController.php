@@ -15,7 +15,7 @@ class RagController extends Controller
     {
         try {
             $request->validate([
-                'pdfFile' => 'required|file|mimes:pdf|max:10240',
+                'pdfFile' => 'required|file|mimes:pdf|max:20480',
             ]);
 
             $metadadosFile = $this->capturaMetadadosPDF($request);

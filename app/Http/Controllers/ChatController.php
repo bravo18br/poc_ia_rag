@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\OllamaController;
 
 use Illuminate\Http\Request;
-use Log;
+use Illuminate\Support\Facades\Log;
 use Pgvector\Vector;
 
 use App\Models\FileMetadata;
@@ -22,13 +22,17 @@ class ChatController extends Controller
 
             // Receber input do usuário
             $userInput = $request->input('userInput');
+            $docSelecionado = $request->input('docSelecionado');
 
             // Transformar input em embeddings
             $embeddingController = app(EmbeddingController::class);
             $embedding = new Vector($embeddingController->generateEmbedding($userInput)['embedding']);
 
             // Buscar embeddings semelhantes no db
-            $contextEmbeddings = Embedding::orderByRaw('embedding <=> ?', [$embedding])->limit(3)->get();
+            $contextEmbeddings = Embedding::where('file_id', $docSelecionado)
+                ->orderByRaw('embedding <=> ?', [$embedding])
+                ->limit(6)
+                ->get();
 
             // Criar um contexto formatado para o Ollama
             $contexto = '';

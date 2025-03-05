@@ -21,3 +21,7 @@ Route::get('/status/{id}', function ($id) {
 Route::get('/metadata/{id}', function ($id) {
     return FileMetadata::find($id) ?? response()->json(['error' => 'Processo não encontrado'], 404);
 });
+
+Route::get('/documents', function () {
+    return FileMetadata::all() ?? response()->json(['error' => 'Processo não encontrado'], 404);
+});
