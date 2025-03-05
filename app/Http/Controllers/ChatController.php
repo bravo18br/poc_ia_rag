@@ -31,7 +31,7 @@ class ChatController extends Controller
             // Buscar embeddings semelhantes no db
             $contextEmbeddings = Embedding::where('file_id', $docSelecionado)
                 ->orderByRaw('embedding <=> ?', [$embedding])
-                ->limit(6)
+                ->limit(1)
                 ->get();
 
             // Criar um contexto formatado para o Ollama

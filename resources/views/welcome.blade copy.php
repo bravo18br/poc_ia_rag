@@ -12,15 +12,15 @@
 
 <body>
     <div class="header-container shadow-sm">
-        <p class="text-center titulo"><strong>POC - IA para auxílio dos servidores</strong></p>
+        <p class="text-center titulo">POC - Estudo com IA</p>
     </div>
 
-    <div class="header-container shadow-sm text-center" id="upload-pdf">
+    <div class="header-container shadow-sm text-center">
         <form id="upload-form" enctype="multipart/form-data">
             @csrf
             <div class="row d-flex">
                 <div class="col-6">
-                    <div class="input-group mt-3">
+                    <div class="input-group mt-3" id="enviar_prompt">
                         <input class="form-control" type="file" id="pdfFile" accept="application/pdf" required>
                         <button type="submit" class="btn btn-primary">Enviar</button>
                     </div>
@@ -39,8 +39,8 @@
         <div class="row d-flex" id="content-section">
             <div class="col-3" id="card_resumo_pdf"></div>
             <div class="col-9" id="card_chat">
-                <h3>Converse com a AraucarIA</h3>
-                <div id="chat-box" class="border rounded p-3 bg-white" style="height: 400px; overflow-y: auto;"></div>
+                <h3>Converse com a IA</h3>
+                <div id="chat-box" class="border rounded p-3 bg-white" style="height: 300px; overflow-y: auto;"></div>
                 <div class="input-group mt-2" id="enviar_prompt">
                     <input class="form-control" type="text" id="userInput" placeholder="Digite sua pergunta...">
                     <button class="btn btn-primary" id="sendMessage">Enviar</button>
@@ -121,8 +121,6 @@
             let message = document.getElementById("userInput").value;
             if (!message) return;
 
-            document.getElementById("userInput").value='';
-
             let chatBox = document.getElementById("chat-box");
             chatBox.innerHTML = `<strong class="message user-message-title">Você</strong>`;
             chatBox.innerHTML += `<div class="message user-message">${message}</div>`;
@@ -133,39 +131,32 @@
             enviarPrompt.classList.add("d-none");
             enviarPrompt.classList.remove("d-flex");
 
-            let uploadPDF = document.getElementById("upload-pdf");
-            uploadPDF.classList.add("d-none");
-            uploadPDF.classList.remove("d-flex");
+            // fetch("/userInput", {
+            //     method: "POST",
+            //     headers: {
+            //         "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({
+            //         userInput: message,
+            //         docSelecionado: document.getElementById("pdf-select").value
+            //     })
+            // })
+            //     .then(response => response.json())
+            //     .then(data => {
 
-            fetch("/userInput", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    userInput: message,
-                    docSelecionado: document.getElementById("pdf-select").value
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
+            //         // Converte Markdown para HTML usando Marked.js
+            //         let formattedResponse = marked.parse(data.response);
 
-                    // Converte Markdown para HTML usando Marked.js
-                    let formattedResponse = marked.parse(data.response);
+            //         chatBox.innerHTML = `<strong class="message user-message-title">Você</strong>`;
+            //         chatBox.innerHTML += `<div class="message user-message">${message}</div>`;
+            //         chatBox.innerHTML += `<strong class="message ia-message-title">AraucarIA</strong>`;
+            //         chatBox.innerHTML += `<div class="message ia-message">${formattedResponse}</div>`;
+            //         chatBox.scrollTop = chatBox.scrollHeight;
 
-                    chatBox.innerHTML = `<strong class="message user-message-title">Você</strong>`;
-                    chatBox.innerHTML += `<div class="message user-message">${message}</div>`;
-                    chatBox.innerHTML += `<strong class="message ia-message-title">AraucarIA</strong>`;
-                    chatBox.innerHTML += `<div class="message ia-message">${formattedResponse}</div>`;
-                    chatBox.scrollTop = chatBox.scrollHeight;
-
-                    enviarPrompt.classList.add("d-flex");
-                    enviarPrompt.classList.remove("d-none");
-
-                    uploadPDF.classList.add("d-flex");
-                    uploadPDF.classList.remove("d-none");
-                });
+            //         enviarPrompt.classList.add('d-flex');
+            //         enviarPrompt.classList.remove('d-none');
+            //     });
         }
 
         onload = fetchDocuments;
