@@ -10,10 +10,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/stream', function () {
-    return view('welcome2');
-});
-
 Route::post('/upload', [RagController::class, 'upload']);
 
 Route::post('/userInput', [ChatController::class, 'userInput']);

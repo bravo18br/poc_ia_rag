@@ -8,6 +8,10 @@
     <title>POC - Estudo com IA</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Toastify (Notificações Modernas) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 
 <body>
@@ -19,15 +23,14 @@
         <form id="upload-form" enctype="multipart/form-data">
             @csrf
             <div class="row d-flex">
-                <div class="col-6">
-                    <div class="input-group mt-3">
+                <div class="col-6 d-flex align-items-center justify-content-center">
+                    <div class="input-group m-3">
                         <input class="form-control" type="file" id="pdfFile" accept="application/pdf" required>
                         <button type="submit" class="btn btn-primary">Enviar</button>
                     </div>
-                    <div id="upload-message" class="mt-3 text-success"></div>
                 </div>
-                <div class="col-6">
-                    <select id="pdf-select" class="form-select mt-3" onchange="fetchMetadata(this.value)">
+                <div class="col-6 d-flex align-items-center justify-content-center">
+                    <select id="pdf-select" class="form-select m-3" onchange="fetchMetadata(this.value)">
                         <option value="">Selecione um documento</option>
                     </select>
                 </div>
@@ -35,11 +38,11 @@
         </form>
     </div>
 
-    <div class="header-container shadow-sm">
+    <div class="header-container shadow-sm p-3">
         <div class="row d-flex" id="content-section">
             <div class="col-3" id="card_resumo_pdf"></div>
             <div class="col-9" id="card_chat">
-                <h3>Converse com a AraucarIA</h3>
+                <h3>Converse com a AraucarIA - Stream</h3>
                 <div id="chat-box" class="border rounded p-3 bg-white" style="height: 400px; overflow-y: auto;"></div>
                 <div class="input-group mt-2" id="enviar_prompt">
                     <input class="form-control" type="text" id="userInput" placeholder="Digite sua pergunta...">
@@ -61,31 +64,71 @@
             fetch("/upload", {
                 method: "POST",
                 headers: {
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                    "Content-Type": "application/json"
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
                 },
                 body: formData
             })
                 .then(response => response.json())
                 .then(data => {
-                    if (!data.error) {
-                        fetchDocuments();
+                    if (data.error) {
+                        showNotification(data.error, "error");
+                    } else {
+                        showNotification(data.message, "success");
+                        checkStatus(data.id)
+                        fetchDocuments(data.id);
                     }
+                })
+                .catch(error => {
+                    showNotification(error.message, "error");
                 });
+            fileInput.value = "";
         });
 
-        function fetchDocuments() {
+        let ultimoStatus = ""; // Armazena o último status conhecido
+        function checkStatus(id) {
+            fetch(`/status/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    let percent = parseFloat(data.percent * 100).toFixed(2);
+                    let statusAtual = `${data.status} - ${percent}%`;
+
+                    // Exibir notificação APENAS se o status mudou
+                    if (statusAtual !== ultimoStatus) {
+                        showNotification(statusAtual, "success");
+                        ultimoStatus = statusAtual; // Atualiza o último status
+                    }
+
+                    if (data.status !== "Concluído") {
+                        setTimeout(() => checkStatus(id), 500);
+                    } else {
+                        showNotification("Processamento concluído!", "success");
+                        fetchDocuments();
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao verificar status:", error);
+                });
+        }
+
+        function fetchDocuments(selectedId = null) {
             fetch("/documents")
                 .then(response => response.json())
                 .then(data => {
                     const pdfSelect = document.getElementById("pdf-select");
                     pdfSelect.innerHTML = '<option value="">Selecione um documento</option>';
+
                     data.forEach(doc => {
                         let option = document.createElement("option");
                         option.value = doc.id;
                         option.textContent = doc.filename;
                         pdfSelect.appendChild(option);
                     });
+
+                    // Seleciona automaticamente o último documento enviado
+                    if (selectedId) {
+                        pdfSelect.value = selectedId;
+                        fetchMetadata(selectedId); // Carrega os metadados automaticamente
+                    }
                 });
         }
 
@@ -117,17 +160,17 @@
             }
         });
 
-        function sendMessage() {
+        async function sendMessage() {
             let message = document.getElementById("userInput").value;
             if (!message) return;
 
-            document.getElementById("userInput").value='';
+            document.getElementById("userInput").value = '';
 
             let chatBox = document.getElementById("chat-box");
             chatBox.innerHTML = `<strong class="message user-message-title">Você</strong>`;
             chatBox.innerHTML += `<div class="message user-message">${message}</div>`;
             chatBox.innerHTML += `<strong class="message ia-message-title">AraucarIA</strong>`;
-            chatBox.innerHTML += `<div class="message ia-message">Carregando <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span></div>`;
+            chatBox.innerHTML += `<div id="iaMessage" class="message ia-message">Carregando <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span></div>`;
 
             let enviarPrompt = document.getElementById("enviar_prompt");
             enviarPrompt.classList.add("d-none");
@@ -137,38 +180,84 @@
             uploadPDF.classList.add("d-none");
             uploadPDF.classList.remove("d-flex");
 
-            fetch("/userInput", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    userInput: message,
-                    docSelecionado: document.getElementById("pdf-select").value
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
-
-                    // Converte Markdown para HTML usando Marked.js
-                    let formattedResponse = marked.parse(data.response);
-
-                    chatBox.innerHTML = `<strong class="message user-message-title">Você</strong>`;
-                    chatBox.innerHTML += `<div class="message user-message">${message}</div>`;
-                    chatBox.innerHTML += `<strong class="message ia-message-title">AraucarIA</strong>`;
-                    chatBox.innerHTML += `<div class="message ia-message">${formattedResponse}</div>`;
-                    chatBox.scrollTop = chatBox.scrollHeight;
-
-                    enviarPrompt.classList.add("d-flex");
-                    enviarPrompt.classList.remove("d-none");
-
-                    uploadPDF.classList.add("d-flex");
-                    uploadPDF.classList.remove("d-none");
+            try {
+                const response = await fetch("/userInputStream", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        userInput: message,
+                        docSelecionado: document.getElementById("pdf-select").value
+                    })
                 });
+
+                if (!response.body) {
+                    throw new Error("Resposta de stream inválida.");
+                }
+
+                const reader = response.body.getReader();
+                let decoder = new TextDecoder();
+                let iaMessageDiv = document.getElementById("iaMessage");
+                iaMessageDiv.innerHTML = ""; // Limpa o "Carregando..."
+
+                let markdownContent = ""; // Acumulador para armazenar a resposta em Markdown
+
+                // Processar o stream em partes corretamente
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    // Decodificar a resposta recebida
+                    let chunk = decoder.decode(value, { stream: true });
+
+                    try {
+                        // Quebra a string em múltiplos objetos JSON caso venha mais de um por chunk
+                        let jsonStrings = chunk.trim().split("\n").filter(Boolean);
+
+                        jsonStrings.forEach(jsonString => {
+                            let parsedData = JSON.parse(jsonString); // Converte para objeto JSON
+
+                            // Verifica se há conteúdo na chave `message.content`
+                            if (parsedData.message && parsedData.message.content) {
+                                markdownContent += parsedData.message.content; // Acumula a resposta
+                                iaMessageDiv.innerHTML = marked.parse(markdownContent); // Converte Markdown para HTML
+                                chatBox.scrollTop = chatBox.scrollHeight; // Rola o chat para baixo
+                            }
+                        });
+
+                    } catch (error) {
+                        console.error("Erro ao processar stream:", error, chunk);
+                    }
+                }
+
+            } catch (error) {
+                console.error("Erro ao receber resposta:", error);
+                document.getElementById("iaMessage").innerHTML = "Erro ao obter resposta.";
+            }
+
+            enviarPrompt.classList.add("d-flex");
+            enviarPrompt.classList.remove("d-none");
+
+            uploadPDF.classList.add("d-flex");
+            uploadPDF.classList.remove("d-none");
         }
 
-        onload = fetchDocuments;
+        function showNotification(message, type = "success") {
+            Toastify({
+                text: message,
+                duration: 3000, // 3 segundos
+                gravity: "top", // Notificação no topo
+                position: "right", // Alinhado à direita
+                close: true, // Botão de fechar
+                style: {
+                    background: type === "success" ? "green" : "red" // Uso correto
+                }
+            }).showToast();
+        }
+
+        onload = fetchDocuments();
 
     </script>
 
@@ -180,7 +269,7 @@
         }
 
         .header-container {
-            margin: 20px;
+            margin: 10px 20px;
             padding: 5px;
             background-color: ghostwhite;
             border-radius: 5px;
@@ -195,9 +284,9 @@
 
         .message {
             max-width: 75%;
-            padding: 0px 10px;
+            padding: 0px;
             border-radius: 10px;
-            margin: 0px 5px;
+            margin: 0px;
             word-wrap: break-word;
         }
 
@@ -213,12 +302,14 @@
             background-color: #007bff;
             color: white;
             text-align: right;
+            padding: 10px 15px;
         }
 
         .ia-message {
             align-self: flex-start;
             background-color: #f1f1f1;
             color: black;
+            padding: 10px 15px;
         }
 
         .ia-message-title {

@@ -75,7 +75,9 @@ class RagPdfJob implements ShouldQueue
                 $status->status = 'Gerando chunks';
                 $status->save();
                 $chunkController = app(ChunkController::class);
-                $chunks = $chunkController->chunkText($text, 500, 100, $status);
+                $chunkSize = env('OLLAMA_CHUNK_SIZE', 500);
+                $chunkOverlap = env('OLLAMA_CHUNK_OVERLAP', 50);
+                $chunks = $chunkController->chunkText($text, $chunkSize, $chunkOverlap, $status);
             } catch (\Exception $e) {
                 Log::error("\nException: " . $e->getMessage());
                 return;
@@ -102,8 +104,6 @@ class RagPdfJob implements ShouldQueue
             }
             $status->status = 'Concluído';
             $status->save();
-
-
 
             Log::info("Processamento concluído para: " . $this->metadados->path);
         } catch (\Exception $e) {
