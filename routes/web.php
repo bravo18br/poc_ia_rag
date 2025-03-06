@@ -10,9 +10,15 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/stream', function () {
+    return view('welcome2');
+});
+
 Route::post('/upload', [RagController::class, 'upload']);
 
 Route::post('/userInput', [ChatController::class, 'userInput']);
+
+Route::post('/userInputStream', [ChatController::class, 'userInputStream']);
 
 Route::get('/status/{id}', function ($id) {
     return StatusRAG::find($id) ?? response()->json(['error' => 'Processo não encontrado'], 404);
