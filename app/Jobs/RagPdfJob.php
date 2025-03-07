@@ -5,8 +5,8 @@ namespace App\Jobs;
 use App\Http\Controllers\ChunkController;
 use App\Http\Controllers\EmbeddingController;
 use App\Http\Controllers\PdfController;
+use App\Http\Controllers\StatusController;
 use App\Models\Embedding;
-use App\Models\StatusRAG;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -36,11 +36,8 @@ class RagPdfJob implements ShouldQueue
     {
         Log::info("Iniciando o processamento do arquivo: app/private/" . $this->metadados->path);
 
-        $status = StatusRAG::where('file_path', $this->metadados->path)->first();
-        if (!$status) {
-            Log::error("Status não encontrado para o arquivo: " . $this->metadados->path);
-            return;
-        }
+        $status = new StatusController();
+        $status->atualizaStatus($this->metadados->path, 0, 'Preparando metadados');
 
         try {
             // Preparar os metadados do arquivo
@@ -55,37 +52,36 @@ class RagPdfJob implements ShouldQueue
             $text .= "arquivo_criado_em: {$this->metadados->created_at}\n";
             $text .= "arquivo_atualizado_em: {$this->metadados->updated_at}\n";
 
-            // Caminho do PDF de exemplo
-            $pdfPath = storage_path("app/private/" . $this->metadados->path);
+            $status->atualizaStatus($this->metadados->path, 1, 'Preparando metadados');
 
             // Iniciar a leitura do PDF
-            // Log::info("Iniciando a leitura do PDF");
             try {
                 $pdfController = app(PdfController::class);
-                $text .= $pdfController->lerPDF($pdfPath);
-                // Log::info("PDF lido.");
+                $text .= $pdfController->lerPDF($this->metadados->path);
             } catch (\Exception $e) {
-                Log::error("\nException: " . $e->getMessage());
+                $errorMessage = "Exception: " . $e->getMessage();
+                Log::error($errorMessage);
+                $status->atualizaStatus($this->metadados->path, 1, $errorMessage);
                 return;
             }
 
             // Gerar os chunks
             // Log::info("Iniciando Gerar os chunks");
             try {
-                $status->status = 'Gerando chunks';
-                $status->save();
                 $chunkController = app(ChunkController::class);
                 $chunkSize = env('OLLAMA_CHUNK_SIZE', 500);
                 $chunkOverlap = env('OLLAMA_CHUNK_OVERLAP', 50);
-                $chunks = $chunkController->chunkText($text, $chunkSize, $chunkOverlap, $status);
+                $chunks = $chunkController->chunkText($text, $chunkSize, $chunkOverlap, $this->metadados->path);
             } catch (\Exception $e) {
-                Log::error("\nException: " . $e->getMessage());
+                $errorMessage = "Exception: " . $e->getMessage();
+                Log::error($errorMessage);
+                $status->atualizaStatus($this->metadados->path, 0, $errorMessage);
                 return;
             }
 
             // Gerar embeddings
             Log::info("Iniciando Gerar embeddings");
-            $status->status = 'Gerando embeddings';
+            $status->atualizaStatus($this->metadados->path, 0, 'Gerando embeddings');
             $embeddingController = app(EmbeddingController::class);
             foreach ($chunks as $i => $chunk) {
                 $embeddingData = $embeddingController->generateEmbedding($chunk);
@@ -99,15 +95,16 @@ class RagPdfJob implements ShouldQueue
                     Log::error("Erro ao gerar embedding para o chunk: " . $chunk);
                 }
                 // Log::info( $i . ' / ' . count($chunks));
-                $status->percent = $i / count($chunks);
-                $status->save();
+                $status->atualizaStatus($this->metadados->path, $i / count($chunks), 'Gerando embeddings');
             }
-            $status->status = 'Concluído';
-            $status->save();
-
+            $status->atualizaStatus($this->metadados->path, 1, 'Gerando embeddings');
+            $status->atualizaStatus($this->metadados->path, 1, 'Concluído');
             Log::info("Processamento concluído para: " . $this->metadados->path);
         } catch (\Exception $e) {
-            Log::error("Erro no processamento: " . $e->getMessage());
+            $errorMessage = "Exception: " . $e->getMessage();
+            Log::error($errorMessage);
+            $status->atualizaStatus($this->metadados->path, 1, $errorMessage);
+            return;
         }
     }
 }

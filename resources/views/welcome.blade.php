@@ -99,7 +99,7 @@
                     }
 
                     if (data.status !== "Concluído") {
-                        setTimeout(() => checkStatus(id), 500);
+                        setTimeout(() => checkStatus(id), 100);
                     } else {
                         showNotification("Processamento concluído!", "success");
                         fetchDocuments();
@@ -247,7 +247,7 @@
         function showNotification(message, type = "success") {
             Toastify({
                 text: message,
-                duration: 3000, // 3 segundos
+                duration: 5000, // 5 segundos
                 gravity: "top", // Notificação no topo
                 position: "right", // Alinhado à direita
                 close: true, // Botão de fechar

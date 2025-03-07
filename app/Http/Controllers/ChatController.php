@@ -19,11 +19,11 @@ class ChatController extends Controller
             $request->validate([
                 'userInput' => 'required',
             ]);
-    
+
             // Receber input do usuário
             $userInput = $request->input('userInput');
             $docSelecionado = $request->input('docSelecionado');
-    
+
             // Criando contexto formatado para o Ollama
             $contexto = $this->generateContext($docSelecionado, $userInput);
             $prompt = $contexto . "<|start_prompt|>{$userInput}<|end_prompt|>";
@@ -61,15 +61,15 @@ class ChatController extends Controller
             $request->validate([
                 'userInput' => 'required',
             ]);
-    
+
             // Receber input do usuário
             $userInput = $request->input('userInput');
             $docSelecionado = $request->input('docSelecionado');
-    
+
             // Criando contexto formatado para o Ollama
             $contexto = $this->generateContext($docSelecionado, $userInput);
             $prompt = $contexto . "<|start_prompt|>{$userInput}<|end_prompt|>";
-    
+
             // Preparar params Ollama
             $params = [
                 "model" => env('OLLAMA_MODEL', 'llama3.1'),
@@ -85,11 +85,11 @@ class ChatController extends Controller
                 ],
                 "stream" => true,
                 "options" => [
-                    "temperature" => env('OLLAMA_MODEL_TEMPERATURE', 0.1),
-                    "top_p" => env('OLLAMA_MODEL_TOP_P', 0.1),
+                    "temperature" => (float) env('OLLAMA_MODEL_TEMPERATURE', 0.1),
+                    "top_p" => (float) env('OLLAMA_MODEL_TOP_P', 0.1),
                 ]
             ];
-    
+
             $ollama = new OllamaController();
             return $ollama->chatOllamaStream($params);
         } catch (\Exception $e) {
@@ -97,18 +97,18 @@ class ChatController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
+
     // Função auxiliar para gerar contexto
     private function generateContext($docSelecionado, $userInput)
     {
         $embeddingController = app(EmbeddingController::class);
         $embedding = new Vector($embeddingController->generateEmbedding($userInput)['embedding']);
-    
+
         $contextEmbeddings = Embedding::where('file_id', $docSelecionado)
             ->orderByRaw('embedding <=> ?', [$embedding])
             ->limit(env('OLLAMA_CONTEXT_EMBEDDINGS_LIMIT', 5))
             ->get();
-    
+
         $contexto = '';
         foreach ($contextEmbeddings as $index => $context) {
             $metadados = FileMetadata::where('id', $context->file_id)->first();
