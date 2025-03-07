@@ -46,7 +46,7 @@ class RagController extends Controller
             RagPdfJob::dispatch($metadadosFile);
 
             return response()->json([
-                'message' => 'Arquivo enviado. O processamento está iniciando.',
+                'message' => 'Arquivo enviado. O processamento está iniciando',
                 'path' => $metadadosFile->path,
                 'id' => $status->id
             ]);
